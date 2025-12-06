@@ -2,7 +2,6 @@ pub mod credential;
 mod tests;
 
 use std::ffi::c_void;
-use std::ptr::null_mut;
 use widestring::{U16CString, U16String};
 use windows::Win32::Security::Credentials::{
     CRED_FLAGS, CRED_PERSIST, CRED_TYPE, CREDENTIALW, CredDeleteW, CredFree, CredReadW, CredWriteW,
@@ -64,25 +63,24 @@ pub fn write_credential(
     target: &str,
     val: credential::Credential,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    // Convert all the things into UTF16
+    let secret_len = val.secret.len();
+
+    let mut target_cstr = U16CString::from_str(target).unwrap();
+    let mut secret_cstr = U16CString::from_str(val.secret).unwrap();
+    let user_cstr = match val.username {
+        Some(user) => Some(U16CString::from_str(user).unwrap()),
+        None => None,
+    };
+
     unsafe {
-        // Get the current time as a Windows file time
         let filetime = GetSystemTimeAsFileTime();
 
-        // Convert all the things into UTF16
-        let secret_len = val.secret.len();
-
-        let target_cstr = U16CString::from_str(target).unwrap();
-        let secret_cstr = U16CString::from_str(val.secret).unwrap();
-        let user_cstr = match val.username {
-            Some(user) => Some(U16CString::from_str(user).unwrap()),
-            None => None,
-        };
-
-        let target_ptr = target_cstr.as_ptr();
-        let secret_ptr = secret_cstr.as_ptr();
+        let target_ptr = target_cstr.as_mut_ptr();
+        let secret_ptr = secret_cstr.as_mut_ptr();
         let user_ptr = match user_cstr {
-            Some(cstr) => cstr.as_ptr(),
-            None => null_mut(),
+            Some(mut user) => user.as_mut_ptr(),
+            None => std::ptr::null_mut(),
         };
 
         // Build our credential object
