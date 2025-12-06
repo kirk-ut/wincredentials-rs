@@ -19,7 +19,7 @@ fn write_credential_is_ok_when_unset() {
     let res = write_credential(
         target,
         credential::Credential {
-            username: username.to_owned(),
+            username: Some(username.to_owned()),
             secret: secret.to_owned(),
         },
     );
@@ -38,7 +38,7 @@ fn write_credential_is_ok_when_set() {
     let _ = write_credential(
         target,
         credential::Credential {
-            username: username.to_owned(),
+            username: Some(username.to_owned()),
             secret: secret.to_owned(),
         },
     );
@@ -46,7 +46,7 @@ fn write_credential_is_ok_when_set() {
     let res = write_credential(
         target,
         credential::Credential {
-            username: username.to_owned(),
+            username: Some(username.to_owned()),
             secret: secret.to_owned(),
         },
     );
@@ -78,7 +78,7 @@ fn read_credential_is_ok_when_set() {
     let res = write_credential(
         target,
         credential::Credential {
-            username: username.to_owned(),
+            username: Some(username.to_owned()),
             secret: secret.to_owned(),
         },
     );
@@ -88,7 +88,7 @@ fn read_credential_is_ok_when_set() {
     assert!(res.is_ok(), "{}", res.err().unwrap().to_string());
 
     let res = res.unwrap();
-    assert_eq!(res.username, username);
+    assert_eq!(res.username, Some(username.to_owned()));
     assert_eq!(res.secret, secret);
 
     let _ = delete_credential(target);
@@ -116,7 +116,7 @@ fn delete_credential_is_ok_when_set() {
     let res = write_credential(
         target,
         credential::Credential {
-            username: username.to_owned(),
+            username: Some(username.to_owned()),
             secret: secret.to_owned(),
         },
     );
@@ -139,7 +139,7 @@ fn write_credential_is_ok_without_username() {
     let res = write_credential(
         target,
         credential::Credential {
-            username: "".to_owned(),
+            username: None,
             secret: secret.to_owned(),
         },
     );
@@ -159,7 +159,7 @@ fn read_credential_is_ok_without_username() {
     let res = write_credential(
         target,
         credential::Credential {
-            username: "".to_owned(),
+            username: None,
             secret: secret.to_owned(),
         },
     );
@@ -169,7 +169,7 @@ fn read_credential_is_ok_without_username() {
     assert!(res.is_ok(), "{}", res.err().unwrap().to_string());
 
     let res = res.unwrap();
-    assert_eq!(res.username, "");
+    assert_eq!(res.username, None);
     assert_eq!(res.secret, secret);
 
     let _ = delete_credential(target);

@@ -2,6 +2,7 @@ pub mod credential;
 mod tests;
 
 use std::ffi::c_void;
+use std::ptr::null;
 use widestring::{U16CString, U16String};
 use windows::Win32::Security::Credentials::{
     CRED_FLAGS, CRED_PERSIST, CRED_TYPE, CREDENTIALW, CredDeleteW, CredFree, CredReadW, CredWriteW,
@@ -36,9 +37,9 @@ pub fn read_credential(target: &str) -> Result<credential::Credential, Box<dyn s
     let credential = unsafe {
         credential::Credential {
             username: if (*cred).UserName.0.is_null() {
-                "".to_string()
+                None
             } else {
-                U16CString::from_ptr_str((*cred).UserName.0 as *const u16).to_string_lossy()
+                Some(U16CString::from_ptr_str((*cred).UserName.0 as *const u16).to_string_lossy())
             },
             // U16String takes the number of elements, not the number of bytes
             //
@@ -72,11 +73,17 @@ pub fn write_credential(
 
         let target_cstr = U16CString::from_str(target).unwrap();
         let secret_cstr = U16CString::from_str(val.secret).unwrap();
-        let user_cstr = U16CString::from_str(val.username).unwrap();
+        let user_cstr = match val.username {
+            Some(user) => Some(U16CString::from_str(user).unwrap()),
+            None => None,
+        };
 
         let target_ptr = target_cstr.as_ptr();
         let secret_ptr = secret_cstr.as_ptr();
-        let user_ptr = user_cstr.as_ptr();
+        let user_ptr = match user_cstr {
+            Some(cstr) => cstr.as_ptr(),
+            None => null(),
+        };
 
         // Build our credential object
         let cred = CREDENTIALW {
