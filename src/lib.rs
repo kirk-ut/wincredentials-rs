@@ -2,7 +2,7 @@ pub mod credential;
 mod tests;
 
 use std::ffi::c_void;
-use std::ptr::null;
+use std::ptr::null_mut;
 use widestring::{U16CString, U16String};
 use windows::Win32::Security::Credentials::{
     CRED_FLAGS, CRED_PERSIST, CRED_TYPE, CREDENTIALW, CredDeleteW, CredFree, CredReadW, CredWriteW,
@@ -82,7 +82,7 @@ pub fn write_credential(
         let secret_ptr = secret_cstr.as_ptr();
         let user_ptr = match user_cstr {
             Some(cstr) => cstr.as_ptr(),
-            None => null(),
+            None => null_mut(),
         };
 
         // Build our credential object
