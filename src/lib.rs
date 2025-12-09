@@ -68,43 +68,38 @@ pub fn write_credential(
 
     let mut target_cstr = U16CString::from_str(target).unwrap();
     let mut secret_cstr = U16CString::from_str(val.secret).unwrap();
-    let user_cstr = match val.username {
-        Some(user) => Some(U16CString::from_str(user).unwrap()),
-        None => None,
+    let mut user_cstr = U16CString::from_str(val.username.unwrap_or("".to_string())).unwrap();
+
+
+    let target_ptr = target_cstr.as_mut_ptr();
+    let secret_ptr = secret_cstr.as_mut_ptr();
+    let user_ptr = if user_cstr == U16CString::from_str("").unwrap() {
+        std::ptr::null_mut()
+    } else {
+        user_cstr.as_mut_ptr()
+    };
+    
+    let filetime = unsafe { GetSystemTimeAsFileTime() };
+
+    // Build our credential object
+    let cred = CREDENTIALW {
+        Flags: NO_FLAGS,
+        Type: GENERIC_CREDENTIAL,
+        TargetName: PWSTR(target_ptr as *mut u16),
+        Comment: PWSTR(std::ptr::null_mut() as *mut u16),
+        LastWritten: filetime,
+        CredentialBlobSize: secret_len as u32 * 2,
+        CredentialBlob: secret_ptr as *mut u8,
+        Persist: CRED_PERSIST(1),
+        AttributeCount: 0,
+        Attributes: std::ptr::null_mut(),
+        TargetAlias: PWSTR(std::ptr::null_mut() as *mut u16),
+        UserName: PWSTR(user_ptr as *mut u16),
     };
 
-    unsafe {
-        let filetime = GetSystemTimeAsFileTime();
+    // Write the credential out
+    unsafe { CredWriteW(&cred, NO_FLAGS.0)? };
 
-        let target_ptr = target_cstr.as_mut_ptr();
-        let secret_ptr = secret_cstr.as_mut_ptr();
-        let user_ptr = match user_cstr {
-            Some(mut user) => user.as_mut_ptr(),
-            None => std::ptr::null_mut(),
-        };
-
-        // Build our credential object
-        let cred = CREDENTIALW {
-            Flags: NO_FLAGS,
-            Type: GENERIC_CREDENTIAL,
-            TargetName: PWSTR(target_ptr as *mut u16),
-            Comment: PWSTR(std::ptr::null_mut() as *mut u16),
-            LastWritten: filetime,
-            CredentialBlobSize: secret_len as u32 * 2,
-            CredentialBlob: secret_ptr as *mut u8,
-            Persist: CRED_PERSIST(1),
-            AttributeCount: 0,
-            Attributes: std::ptr::null_mut(),
-            TargetAlias: PWSTR(std::ptr::null_mut() as *mut u16),
-            UserName: PWSTR(user_ptr as *mut u16),
-        };
-
-        // Write the credential out
-        CredWriteW(&cred, NO_FLAGS.0)?
-    };
-
-    // Free the file time object we got
-    //unsafe { drop(Box::from_raw(filetime)) }
     Ok(())
 }
 
