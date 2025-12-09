@@ -17,7 +17,7 @@ const GENERIC_CREDENTIAL: CRED_TYPE = CRED_TYPE(1);
 /// will resolve to an error.
 pub fn read_credential(target: &str) -> Result<credential::Credential, Box<dyn std::error::Error>> {
     // Convert the target to UTF16
-    let target_cstr = U16CString::from_str(target).unwrap();
+    let target_cstr = U16CString::from_str(target)?;
     let target_ptr = target_cstr.as_ptr();
 
     // Allocate a pointer for the credential and read it
@@ -66,14 +66,15 @@ pub fn write_credential(
     // Convert all the things into UTF16
     let secret_len = val.secret.len();
 
-    let mut target_cstr = U16CString::from_str(target).unwrap();
-    let mut secret_cstr = U16CString::from_str(val.secret).unwrap();
-    let mut user_cstr = U16CString::from_str(val.username.unwrap_or("".to_string())).unwrap();
+    let mut target_cstr = U16CString::from_str(target)?;
+    let mut secret_cstr = U16CString::from_str(val.secret)?;
+    let mut user_cstr = U16CString::from_str(val.username.unwrap_or("".to_string()))?;
+    let empty_cstr = U16CString::from_str("")?;
 
 
     let target_ptr = target_cstr.as_mut_ptr();
     let secret_ptr = secret_cstr.as_mut_ptr();
-    let user_ptr = if user_cstr == U16CString::from_str("").unwrap() {
+    let user_ptr = if user_cstr == empty_cstr {
         std::ptr::null_mut()
     } else {
         user_cstr.as_mut_ptr()
@@ -107,7 +108,7 @@ pub fn write_credential(
 /// fails for any reason, the result will resolve to an error.
 pub fn delete_credential(target: &str) -> Result<(), Box<dyn std::error::Error>> {
     // Convert the target to UTF16
-    let target_cstr = U16CString::from_str(target).unwrap();
+    let target_cstr = U16CString::from_str(target)?;
     let target_ptr = target_cstr.as_ptr();
 
     // Delete the credential
